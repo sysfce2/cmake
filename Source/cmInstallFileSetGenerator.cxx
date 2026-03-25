@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <map>
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
@@ -94,13 +95,15 @@ bool cmInstallFileSetGenerator::Compute(cmLocalGenerator* lg)
 
 std::string cmInstallFileSetGenerator::GetDestination() const
 {
+  cmInstallGenerator::CheckAbsoluteDestination(
+    this->Destination, this->LocalGenerator, this->Backtrace);
   return this->Destination;
 }
 
 std::string cmInstallFileSetGenerator::GetDestination(
   std::string const& config) const
 {
-  return this->GetDestination(this->Target, config).unescapedDestination;
+  return this->GetDestination(this->Target, config).UnescapedDestination;
 }
 
 cmInstallFileSetGenerator::DestinationContext
@@ -108,9 +111,13 @@ cmInstallFileSetGenerator::GetDestination(cmGeneratorTarget* gte,
                                           std::string const& config) const
 {
   cmGeneratorExpression ge(*gte->Makefile->GetCMakeInstance());
-  auto cge = ge.Parse(this->Destination);
+  std::unique_ptr<cmCompiledGeneratorExpression> cge =
+    ge.Parse(this->Destination);
 
   std::string const dest = cge->Evaluate(gte->LocalGenerator, config, gte);
+  cmInstallGenerator::CheckAbsoluteDestination(dest, gte->LocalGenerator,
+                                               this->Backtrace);
+
   return { dest, cge->GetHadContextSensitiveCondition() };
 }
 

@@ -31,8 +31,8 @@ public:
 
   struct DestinationContext
   {
-    std::string unescapedDestination;
-    bool isConfigDependent;
+    std::string UnescapedDestination;
+    bool HadContextSensitiveCondition;
   };
   std::string GetDestination(std::string const& config) const;
   DestinationContext GetDestination(cmGeneratorTarget* gt,

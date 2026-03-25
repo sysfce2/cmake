@@ -216,11 +216,11 @@ cm::optional<std::string> cmExportInstallSbomGenerator::GetFileSetDirectory(
   cmGeneratorTarget* gte, cmTargetExport const* te,
   cmGeneratorFileSet const* fileSet, cm::optional<std::string> const& config)
 {
-  auto config_value = config.value_or("");
-  auto result = te->FileSetGenerators.at(fileSet->GetName())
-                  ->GetDestination(gte, config_value);
+  cmInstallFileSetGenerator::DestinationContext result =
+    te->FileSetGenerators.at(fileSet->GetName())
+      ->GetDestination(gte, config.value_or(""));
 
-  if (config && !result.isConfigDependent) {
+  if (config && !result.HadContextSensitiveCondition) {
     return {};
   }
 
@@ -237,9 +237,9 @@ cm::optional<std::string> cmExportInstallSbomGenerator::GetFileSetDirectory(
   }
 
   cm::optional<std::string> dest = cmOutputConverter::EscapeForCMake(
-    result.unescapedDestination, cmOutputConverter::WrapQuotes::NoWrap);
+    result.UnescapedDestination, cmOutputConverter::WrapQuotes::NoWrap);
 
-  if (!cmSystemTools::FileIsFullPath(result.unescapedDestination)) {
+  if (!cmSystemTools::FileIsFullPath(result.UnescapedDestination)) {
     dest = cmStrCat("@prefix@/"_s, *dest);
   }
 

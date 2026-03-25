@@ -285,19 +285,21 @@ std::string cmExportInstallCMakeConfigGenerator::GetFileSetDirectories(
     gte->Makefile->GetGeneratorConfigs(cmMakefile::IncludeEmptyConfig);
 
   for (auto const& config : configs) {
-    auto result = te->FileSetGenerators.at(fileSet->GetName())
-                    ->GetDestination(gte, config);
+    cmInstallFileSetGenerator::DestinationContext result =
+      te->FileSetGenerators.at(fileSet->GetName())
+        ->GetDestination(gte, config);
 
-    auto dest = cmOutputConverter::EscapeForCMake(
-      result.unescapedDestination, cmOutputConverter::WrapQuotes::NoWrap);
-    if (!cmSystemTools::FileIsFullPath(result.unescapedDestination)) {
+    std::string dest = cmOutputConverter::EscapeForCMake(
+      result.UnescapedDestination, cmOutputConverter::WrapQuotes::NoWrap);
+    if (!cmSystemTools::FileIsFullPath(result.UnescapedDestination)) {
       dest = cmStrCat("${_IMPORT_PREFIX}/", dest);
     }
 
     auto const& type = fileSet->GetType();
     // C++ modules do not support interface file sets which are dependent upon
     // the configuration.
-    if (result.isConfigDependent && type == cm::FileSetMetadata::CXX_MODULES) {
+    if (result.HadContextSensitiveCondition &&
+        type == cm::FileSetMetadata::CXX_MODULES) {
       auto* mf = this->IEGen->GetLocalGenerator()->GetMakefile();
       std::ostringstream e;
       e << "The \"" << gte->GetName() << "\" target's interface file set \""
@@ -308,7 +310,7 @@ std::string cmExportInstallCMakeConfigGenerator::GetFileSetDirectories(
       return std::string{};
     }
 
-    if (result.isConfigDependent && configs.size() != 1) {
+    if (result.HadContextSensitiveCondition && configs.size() != 1) {
       resultVector.push_back(
         cmStrCat("\"$<$<CONFIG:", config, ">:", dest, ">\""));
     } else {
