@@ -120,13 +120,17 @@ Options
 
   Override/define :variable:`CPACK_PACKAGE_VENDOR`.
 
-.. option:: --preset <presetName>
+.. option:: --preset <preset>, --preset=<preset>
 
-  Use a preset from :manual:`cmake-presets(7)`.
+  Use a package :manual:`preset <cmake-presets(7)>` to specify package
+  options. The project binary directory is inferred from the
+  ``configurePreset`` key. The current working directory must contain
+  ``CMakePresets.json`` or ``CMakeUserPresets.json``.
 
 .. option:: --list-presets
 
-  List presets from :manual:`cmake-presets(7)`.
+  Lists the available package presets. The current working directory must
+  contain ``CMakePresets.json`` or ``CMakeUserPresets.json``.
 
 .. include:: include/OPTIONS_HELP.rst
 

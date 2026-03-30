@@ -1,4 +1,4 @@
-.. cmake-manual-description: CMakePresets.json
+.. cmake-manual-description: CMake Presets Reference
 
 cmake-presets(7)
 ****************
@@ -41,7 +41,7 @@ The files are a JSON document with an object as the root:
 
 .. presets-versionadded:: 10
 
-  Preset files may include comments using the key ``$comment`` at any level
+  Presets files may include comments using the key ``$comment`` at any level
   within the JSON object to provide documentation.
 
 The root object recognizes the following fields:
@@ -51,14 +51,13 @@ The root object recognizes the following fields:
 Includes
 ^^^^^^^^
 
-``CMakePresets.json`` and ``CMakeUserPresets.json`` can include other files
-with the ``include`` field in file version ``4`` and later. Files included
-by these files can also include other files. If ``CMakePresets.json`` and
-``CMakeUserPresets.json`` are both present, ``CMakeUserPresets.json``
-implicitly includes ``CMakePresets.json``, even with no ``include`` field,
-in all versions of the format.
+CMake presets files can include other files with the ``include`` field in file
+version ``4`` and later. Files included by these files can also include other
+files. If ``CMakePresets.json`` and ``CMakeUserPresets.json`` are both present,
+``CMakeUserPresets.json`` implicitly includes ``CMakePresets.json``, even with
+no ``include`` field, in all versions of the format.
 
-If a preset file contains presets that inherit from presets in another file,
+If a presets file contains presets that inherit from presets in another file,
 the file must include the other file either directly or indirectly.
 Include cycles are not allowed among files. If ``a.json`` includes
 ``b.json``, ``b.json`` cannot include ``a.json``. However, a file may be
@@ -268,12 +267,12 @@ Recognized macros include:
 ``${fileDir}``
   .. presets-versionadded:: 4
 
-  Path to the directory containing the preset file which defines the preset
+  Path to the directory containing the presets file which defines the preset
   being used.
 
   .. presets-versionchanged:: 12
 
-    This macro *always* expands to the directory of the current preset file
+    This macro *always* expands to the directory of the current presets file
     containing the macro, regardless of the preset being used.
 
     For example, consider the following scenario.
@@ -296,7 +295,7 @@ Recognized macros include:
     .. note::
 
       Since the ``${fileDir}`` macro in version 12 is expanded in the context
-      of the current preset file, it is the version of the current file, rather
+      of the current presets file, it is the version of the current file, rather
       than the version of the root file containing the preset being used, which
       enables this alternative behavior.
 
@@ -351,9 +350,8 @@ Recognized macros include:
 Versions
 ========
 
-The JSON schema of ``CMakePresets.json`` and ``CMakeUserPresets.json``
-follows a version scheme where new versions are added and allowed in newer
-versions of CMake.
+The JSON schema of CMake presets files follows a version scheme where new
+versions are added and allowed in newer versions of CMake.
 
 A list of the supported versions along with the version of CMake in which
 they were added and a summary of the new features and changes is given below.
@@ -477,7 +475,7 @@ they were added and a summary of the new features and changes is given below.
     * Changes to `Macro Expansion`_
 
       * The `${fileDir} <CMakePresets fileDir_>`_ macro now always expands to
-        the directory of preset file containing the ``${fileDir}`` macro,
+        the directory of presets file containing the ``${fileDir}`` macro,
         regardless of whether it is inherited by another preset in a different
         directory.
 
@@ -490,4 +488,4 @@ Schema
 ======
 
 :download:`This file </manual/presets/schema.json>` provides a machine-readable
-JSON schema for the ``CMakePresets.json`` format.
+JSON schema for the CMake presets file format.

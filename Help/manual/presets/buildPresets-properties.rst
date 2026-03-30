@@ -136,7 +136,7 @@
   .. versionchanged:: 4.3
 
     This field does not accept negative integer values, regardless of
-    the version in the preset file.
+    the version in the presets file.
 
 .. _`CMakePresets.buildPresets.targets`:
 

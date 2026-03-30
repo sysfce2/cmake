@@ -557,7 +557,7 @@ All future configuration changes will be via the ``CMakePresets.json`` file.
 Build and Run
 -------------
 
-We can now use the preset file to manage our configuration.
+We can now use the presets file to manage our configuration.
 
 .. code-block:: console
 

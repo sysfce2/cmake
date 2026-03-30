@@ -1033,7 +1033,7 @@ properties:
             .. versionchanged:: 4.3
 
               This field does not accept negative integer values, regardless of
-              the version in the preset file.
+              the version in the presets file.
           minimum: 0
         targets:
           anyOf:
@@ -1629,7 +1629,7 @@ properties:
                 .. versionchanged:: 4.3
 
                   This field does not accept negative integer values,
-                  regardless of the version in the preset file.
+                  regardless of the version in the presets file.
               minimum: 0
             resourceSpecFile:
               type: string

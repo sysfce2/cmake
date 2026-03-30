@@ -716,8 +716,9 @@ Options
  Lists the available presets of the specified ``<type>``.  Valid values for
  ``<type>`` are ``configure``, ``build``, ``test``, ``package``, or ``all``.
  If ``<type>`` is omitted, ``configure`` is assumed.  The current working
- directory must contain CMake preset files unless the :cmake-option:`-S`
- option is used to specify a different top level source directory.
+ directory must contain ``CMakePresets.json`` and/or ``CMakeUserPresets.json``
+ unless the :cmake-option:`-S` option is used to specify a different top level
+ source directory.
 
 .. option:: --debugger
 
@@ -793,9 +794,9 @@ following options:
 
 .. option:: --preset <preset>, --preset=<preset>
 
-  Use a build preset to specify build options. The project binary directory
-  is inferred from the ``configurePreset`` key unless a directory is specified
-  after ``--build``.  See :manual:`preset <cmake-presets(7)>` for more details.
+  Use a build :manual:`preset <cmake-presets(7)>` to specify build options.
+  The project binary directory is inferred from the ``configurePreset`` key
+  unless a directory is specified after ``--build``.
 
   .. versionadded:: 4.3
     ``cmake --build`` now supports specifying a build directory and
@@ -803,7 +804,7 @@ following options:
 
   .. versionchanged:: 4.4
     ``cmake --build <dir> --preset`` no longer needs to be called from the
-    directory containing the CMake presets files.
+    directory containing ``CMakePresets.json`` or ``CMakeUserPresets.json``.
 
 .. option:: --list-presets
 
@@ -811,7 +812,7 @@ following options:
 
   .. versionchanged:: 4.4
     ``cmake --build <dir> --list-presets`` no longer needs to be called from
-    the directory containing the CMake presets files.
+    the directory containing ``CMakePresets.json`` or ``CMakeUserPresets.json``.
 
 .. option:: -j [<jobs>], --parallel [<jobs>]
 
@@ -1909,10 +1910,9 @@ The options are:
 
 .. option:: --preset <preset>, --preset=<preset>
 
-  Use a workflow preset to specify a workflow. The project binary directory
-  is inferred from the initial configure preset. The current working directory
-  must contain CMake preset files.
-  See :manual:`preset <cmake-presets(7)>` for more details.
+  Use a workflow :manual:`preset <cmake-presets(7)>` to specify a workflow.
+  The project binary directory is inferred from the initial configure preset.
+  The current working directory must contain CMake presets files.
 
   .. versionchanged:: 3.31
     When following immediately after the ``--workflow`` option,
@@ -1926,7 +1926,7 @@ The options are:
 .. option:: --list-presets
 
   Lists the available workflow presets. The current working directory must
-  contain CMake preset files.
+  contain ``CMakePresets.json`` and/or ``CMakeUserPresets.json``.
 
 .. option:: --fresh
 
