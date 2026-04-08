@@ -886,6 +886,7 @@ public:
     struct AT;
     struct FOR;
     struct REGEX;
+    struct PREDICATE;
 
     virtual ~TransformSelector() = default;
 
@@ -910,6 +911,9 @@ public:
     static std::unique_ptr<TransformSelector> New(std::string const&);
     template <typename Type>
     static std::unique_ptr<TransformSelector> New(std::string&&);
+
+    static std::unique_ptr<TransformSelector> NewPREDICATE(
+      std::string const& functionName, cmMakefile& makefile);
 
     cmMakefile* Makefile = nullptr;
 

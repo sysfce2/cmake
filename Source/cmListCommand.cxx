@@ -520,6 +520,7 @@ bool HandleTransformCommand(std::vector<std::string> const& args,
   std::string const REGEX{ "REGEX" };
   std::string const AT{ "AT" };
   std::string const FOR{ "FOR" };
+  std::string const PREDICATE{ "PREDICATE" };
   std::string const OUTPUT_VARIABLE{ "OUTPUT_VARIABLE" };
   std::unique_ptr<cmList::TransformSelector> selector;
   std::string outputName = listName;
@@ -527,7 +528,8 @@ bool HandleTransformCommand(std::vector<std::string> const& args,
   try {
     // handle optional arguments
     while (args.size() > index) {
-      if ((args[index] == REGEX || args[index] == AT || args[index] == FOR) &&
+      if ((args[index] == REGEX || args[index] == AT || args[index] == FOR ||
+           args[index] == PREDICATE) &&
           selector) {
         status.SetError(
           cmStrCat("sub-command TRANSFORM, selector already specified (",
@@ -650,6 +652,21 @@ bool HandleTransformCommand(std::vector<std::string> const& args,
           cmList::TransformSelector::New<cmList::TransformSelector::FOR>(
             { start, stop, step });
 
+        continue;
+      }
+
+      // PREDICATE selector
+      if (args[index] == PREDICATE) {
+        if (args.size() == ++index) {
+          status.SetError("sub-command TRANSFORM, selector PREDICATE expects "
+                          "'function name' argument.");
+          return false;
+        }
+
+        selector = cmList::TransformSelector::NewPREDICATE(
+          args[index], status.GetMakefile());
+
+        index += 1;
         continue;
       }
 

@@ -316,6 +316,39 @@ Modification
 
         list(TRANSFORM <list> <ACTION> REGEX <regular_expression> ...)
 
+    ``PREDICATE``
+      Specify a user-defined callable as a predicate.
+      Only elements for which the callable returns a true value will be
+      transformed.
+
+      .. code-block:: cmake
+
+        list(TRANSFORM <list> <ACTION> PREDICATE <function> ...)
+
+      .. versionadded:: 4.4
+
+      ``<function>`` is a user-defined :command:`function` with exactly
+      two formal parameters: the input value and the name of an output
+      variable.  The callable must set the output variable to a boolean
+      value.  Standard CMake boolean evaluation is used.
+      If the callable does not set the output variable, it is an error.
+
+      Example:
+
+      .. code-block:: cmake
+
+        function(is_relative path result)
+          if(NOT IS_ABSOLUTE "${path}")
+            set(${result} TRUE PARENT_SCOPE)
+          else()
+            set(${result} FALSE PARENT_SCOPE)
+          endif()
+        endfunction()
+
+        set(search_paths /usr/include src lib /opt/lib)
+        list(TRANSFORM search_paths PREPEND "${CMAKE_CURRENT_SOURCE_DIR}/"
+             PREDICATE is_relative)
+
 
 Ordering
 ^^^^^^^^

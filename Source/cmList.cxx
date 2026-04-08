@@ -81,6 +81,61 @@ private:
   cmsys::RegularExpression& Regex;
   bool const IncludeMatches;
 };
+
+class PredicateEvaluator
+{
+public:
+  PredicateEvaluator(std::string const& functionName, cmMakefile& makefile,
+                     std::string errorPrefix = "sub-command TRANSFORM, "
+                                               "selector PREDICATE")
+    : FunctionName(functionName)
+    , Makefile(&makefile)
+    , ErrorPrefix(std::move(errorPrefix))
+  {
+    if (!makefile.GetState()->GetCommand(this->FunctionName)) {
+      throw cmList::transform_error(cmStrCat(this->ErrorPrefix,
+                                             ": unknown function \"",
+                                             this->FunctionName, "\"."));
+    }
+  }
+
+  bool operator()(std::string const& value)
+  {
+    std::string const outputVar = "_list_predicate_out_";
+    this->Makefile->RemoveDefinition(outputVar);
+
+    cmListFileContext context = this->Makefile->GetBacktrace().Top();
+    std::vector<cmListFileArgument> funcArgs;
+    funcArgs.emplace_back(value, cmListFileArgument::Quoted, context.Line);
+    funcArgs.emplace_back(outputVar, cmListFileArgument::Quoted, context.Line);
+    cmListFileFunction func{ this->FunctionName, context.Line, context.Line,
+                             std::move(funcArgs) };
+
+    cmExecutionStatus status(*this->Makefile);
+    if (!this->Makefile->ExecuteCommand(func, status) ||
+        status.GetNestedError()) {
+      throw cmList::transform_error(
+        cmStrCat(this->ErrorPrefix, ": function \"", this->FunctionName,
+                 "\" failed during execution."));
+    }
+
+    cmValue result = this->Makefile->GetDefinition(outputVar);
+    if (!result) {
+      throw cmList::transform_error(
+        cmStrCat(this->ErrorPrefix, ": function \"", this->FunctionName,
+                 "\" did not set the output variable."));
+    }
+
+    bool boolResult = cmIsOn(*result);
+    this->Makefile->RemoveDefinition(outputVar);
+    return boolResult;
+  }
+
+private:
+  std::string FunctionName;
+  cmMakefile* Makefile = nullptr;
+  std::string ErrorPrefix;
+};
 }
 
 cmList& cmList::filter(cm::string_view pattern, FilterMode mode)
@@ -269,6 +324,26 @@ public:
   }
 
   cmsys::RegularExpression Regex;
+};
+class TransformSelectorPredicate : public TransformSelector
+{
+public:
+  TransformSelectorPredicate(std::string const& functionName,
+                             cmMakefile& makefile)
+    : TransformSelector("PREDICATE")
+    , Evaluator(functionName, makefile)
+  {
+  }
+
+  bool Validate(std::size_t) override { return true; }
+
+  bool InSelection(std::string const& value) override
+  {
+    return this->Evaluator(value);
+  }
+
+private:
+  PredicateEvaluator Evaluator;
 };
 class TransformSelectorIndexes : public TransformSelector
 {
@@ -825,6 +900,14 @@ std::unique_ptr<cmList::TransformSelector> cmList::TransformSelector::NewREGEX(
   }
   // weird construct to please all compilers
   return std::unique_ptr<cmList::TransformSelector>(selector.release());
+}
+
+std::unique_ptr<cmList::TransformSelector>
+cmList::TransformSelector::NewPREDICATE(std::string const& functionName,
+                                        cmMakefile& makefile)
+{
+  return std::unique_ptr<cmList::TransformSelector>(
+    new TransformSelectorPredicate(functionName, makefile));
 }
 
 cmList& cmList::transform(TransformAction action,
