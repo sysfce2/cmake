@@ -131,7 +131,10 @@ public:
     void AppendError(cm::string_view err);
     cm::optional<std::string> Error;
     std::string Name;
+    // working directory for test, overridden by WORKING_DIRECTORY property
     std::string Directory;
+    // Original directory of test creation
+    std::string CTestDirectory;
     std::vector<std::string> Args;
     std::vector<std::string> RequiredFiles;
     std::vector<std::string> Depends;
