@@ -56,6 +56,8 @@ struct cmCTestTestOptions
   std::string ResourceSpecFile;
   std::string JUnitXMLFileName;
 
+  std::string CoverageTool;
+
   std::vector<std::string> TestPassthroughArguments;
 };
 
