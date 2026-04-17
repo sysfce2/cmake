@@ -6204,6 +6204,8 @@ std::string cmGeneratorTarget::GetSwiftPackageName() const
   std::string packageName;
   if (cmValue projectName = this->GetProperty("Swift_PACKAGE_NAME")) {
     packageName = *projectName;
+  } else if (this->GetPolicyStatusCMP0216() == cmPolicies::NEW) {
+    packageName = this->Makefile->GetSafeDefinition("PROJECT_NAME");
   }
   return packageName;
 }
