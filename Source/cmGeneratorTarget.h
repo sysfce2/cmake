@@ -640,6 +640,9 @@ public:
 
   std::string GetClangTidyExportFixesDirectory(std::string const& lang) const;
 
+  /** Return the Swift package name for this target. */
+  std::string GetSwiftPackageName() const;
+
   /** Return the swift module name for this target. */
   std::string GetSwiftModuleName() const;
 

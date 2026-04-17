@@ -2820,6 +2820,22 @@ void cmGeneratorTarget::AddSwiftTargetFlags(std::string& flags) const
       flags += " -swift-version " + *version;
     }
   }
+
+  if (!this->GetGlobalGenerator()->IsXcode() &&
+      cmSystemTools::VersionCompare(
+        cmSystemTools::OP_GREATER_EQUAL,
+        this->Makefile->GetDefinition("CMAKE_Swift_COMPILER_VERSION"),
+        "5.8")) {
+    // Note: The Xcode generator sets the `SWIFT_PACKAGE_NAME` BuildSettings
+    //       attribute
+    std::string const packageName = this->GetSwiftPackageName();
+    if (!packageName.empty()) {
+      std::string const packageFlag =
+        this->Makefile->GetSafeDefinition("CMAKE_Swift_PACKAGE_NAME_FLAG");
+      // Add the package name to the flags
+      flags += " " + packageFlag + " " + packageName;
+    }
+  }
 }
 
 void cmGeneratorTarget::AddCUDAToolkitFlags(std::string& flags) const
@@ -6181,6 +6197,15 @@ std::string cmGeneratorTarget::BuildDatabasePath(
 
   return cmStrCat(this->GetSupportDirectory(), '/', lang,
                   "_build_database.json");
+}
+
+std::string cmGeneratorTarget::GetSwiftPackageName() const
+{
+  std::string packageName;
+  if (cmValue projectName = this->GetProperty("Swift_PACKAGE_NAME")) {
+    packageName = *projectName;
+  }
+  return packageName;
 }
 
 std::string cmGeneratorTarget::GetSwiftModuleName() const
