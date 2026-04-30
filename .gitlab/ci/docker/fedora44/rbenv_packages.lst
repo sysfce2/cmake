@@ -1,5 +1,6 @@
 rbenv
 ruby-build-rbenv
+ruby-build-ruby
 
 # Packages needed for `rbenv`
 # https://github.com/rbenv/ruby-build/wiki#fedora
