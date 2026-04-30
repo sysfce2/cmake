@@ -1,0 +1,9 @@
+CMD_INSTALL_ABSOLUTE_DESTINATION
+--------------------------------
+
+.. diagnostic::
+  :default: ignore
+
+  Warn when an :command:`install` command specifies an absolute ``DESTINATION``
+  path.  Absolute destinations are typically undesirable because they prevent
+  the installation prefix from being overridden at install time.
