@@ -42,4 +42,4 @@ set(CMAKE_CXX_STANDARD "11" CACHE STRING "")
 # Qt 6 requires C++17, so use Qt 5.
 set(CMake_QT_MAJOR_VERSION "5" CACHE STRING "")
 
-include("${CMAKE_CURRENT_LIST_DIR}/configure_fedora43_common.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/configure_fedora44_common.cmake")
