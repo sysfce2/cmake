@@ -474,6 +474,9 @@ they were added and a summary of the new features and changes is given below.
       * The ``uninitialized`` and ``unusedCli`` fields were added to
         :preset:`configurePresets.errors`.
 
+      * The ``installAbsoluteDestination`` field was added to
+        :preset:`configurePresets.warnings` and :preset:`configurePresets.errors`.
+
     * Changes to `Macro Expansion`_
 
       * The `${fileDir} <CMakePresets fileDir_>`_ macro now always expands to
