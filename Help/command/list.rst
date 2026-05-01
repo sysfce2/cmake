@@ -122,13 +122,13 @@ Modification
 .. signature::
   list(FILTER <list> <INCLUDE|EXCLUDE> REGEX <regular_expression>)
 
-.. versionadded:: 3.6
+  .. versionadded:: 3.6
 
-Includes or removes items from the list that match the mode's pattern.
-In ``REGEX`` mode, items will be matched against the given regular expression.
+  Includes or removes items from the list that match the mode's pattern.
+  In ``REGEX`` mode, items will be matched against the given regular expression.
 
-For more information on regular expressions look under
-:ref:`string(REGEX) <Regex Specification>`.
+  For more information on regular expressions look under
+  :ref:`string(REGEX) <Regex Specification>`.
 
 .. signature::
   list(INSERT <list> <element_index> <element> [<element> ...])
