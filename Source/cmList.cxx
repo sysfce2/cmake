@@ -82,15 +82,26 @@ private:
   bool const IncludeMatches;
 };
 
+// Hash of call site (FilePath:Line) for unique variable names across recursive
+// calls.
+std::string OutputVarFor(cm::string_view prefix, cmMakefile& makefile)
+{
+  cmListFileContext context = makefile.GetBacktrace().Top();
+  std::size_t hash =
+    std::hash<std::string>{}(cmStrCat(context.FilePath, ":", context.Line));
+  return cmStrCat(prefix, hash, "_");
+}
+
 class PredicateEvaluator
 {
 public:
-  PredicateEvaluator(std::string const& functionName, cmMakefile& makefile,
+  PredicateEvaluator(std::string functionName, cmMakefile& makefile,
                      std::string errorPrefix = "sub-command TRANSFORM, "
                                                "selector PREDICATE")
-    : FunctionName(functionName)
+    : FunctionName(std::move(functionName))
     , Makefile(&makefile)
     , ErrorPrefix(std::move(errorPrefix))
+    , OutputVar(OutputVarFor("_cmake_predicate_out_", makefile))
   {
     if (!makefile.GetState()->GetCommand(this->FunctionName)) {
       throw cmList::transform_error(cmStrCat(this->ErrorPrefix,
@@ -101,13 +112,13 @@ public:
 
   bool operator()(std::string const& value)
   {
-    std::string const outputVar = "_list_predicate_out_";
-    this->Makefile->RemoveDefinition(outputVar);
+    this->Makefile->RemoveDefinition(this->OutputVar);
 
     cmListFileContext context = this->Makefile->GetBacktrace().Top();
     std::vector<cmListFileArgument> funcArgs;
     funcArgs.emplace_back(value, cmListFileArgument::Quoted, context.Line);
-    funcArgs.emplace_back(outputVar, cmListFileArgument::Quoted, context.Line);
+    funcArgs.emplace_back(this->OutputVar, cmListFileArgument::Quoted,
+                          context.Line);
     cmListFileFunction func{ this->FunctionName, context.Line, context.Line,
                              std::move(funcArgs) };
 
@@ -119,7 +130,7 @@ public:
                  "\" failed during execution."));
     }
 
-    cmValue result = this->Makefile->GetDefinition(outputVar);
+    cmValue result = this->Makefile->GetDefinition(this->OutputVar);
     if (!result) {
       throw cmList::transform_error(
         cmStrCat(this->ErrorPrefix, ": function \"", this->FunctionName,
@@ -127,7 +138,7 @@ public:
     }
 
     bool boolResult = cmIsOn(*result);
-    this->Makefile->RemoveDefinition(outputVar);
+    this->Makefile->RemoveDefinition(this->OutputVar);
     return boolResult;
   }
 
@@ -135,6 +146,26 @@ private:
   std::string FunctionName;
   cmMakefile* Makefile = nullptr;
   std::string ErrorPrefix;
+  std::string OutputVar;
+};
+
+class MatchesPredicate
+{
+public:
+  MatchesPredicate(PredicateEvaluator& evaluator, cmList::FilterMode mode)
+    : Evaluator(evaluator)
+    , IncludeMatches(mode == cmList::FilterMode::INCLUDE)
+  {
+  }
+
+  bool operator()(std::string const& target)
+  {
+    return this->Evaluator(target) ^ this->IncludeMatches;
+  }
+
+private:
+  PredicateEvaluator& Evaluator;
+  bool IncludeMatches;
 };
 }
 
@@ -150,6 +181,23 @@ cmList& cmList::filter(cm::string_view pattern, FilterMode mode)
   auto it = std::remove_if(this->Values.begin(), this->Values.end(),
                            MatchesRegex{ regex, mode });
   this->Values.erase(it, this->Values.end());
+
+  return *this;
+}
+
+cmList& cmList::filter(std::string const& functionName, FilterMode mode,
+                       cmMakefile& makefile)
+{
+  try {
+    PredicateEvaluator evaluator(functionName, makefile,
+                                 "sub-command FILTER, mode PREDICATE");
+
+    auto it = std::remove_if(this->Values.begin(), this->Values.end(),
+                             MatchesPredicate{ evaluator, mode });
+    this->Values.erase(it, this->Values.end());
+  } catch (transform_error& e) {
+    throw std::invalid_argument(e.what());
+  }
 
   return *this;
 }
@@ -655,6 +703,7 @@ public:
     TransformAction::Initialize(selector);
     this->FunctionName = functionName;
     this->Makefile = &makefile;
+    this->OutputVar = OutputVarFor("_cmake_transform_apply_out_", makefile);
 
     // Validate: command must exist
     if (!makefile.GetState()->GetCommand(this->FunctionName)) {
@@ -678,17 +727,15 @@ public:
       return s;
     }
 
-    // Use a unique output variable name to avoid collisions
-    std::string const outputVar = "_list_transform_apply_out_";
-
     // Unset the output variable before calling
-    this->Makefile->RemoveDefinition(outputVar);
+    this->Makefile->RemoveDefinition(this->OutputVar);
 
     // Build the function call: functionName(s, outputVar)
     cmListFileContext context = this->Makefile->GetBacktrace().Top();
     std::vector<cmListFileArgument> funcArgs;
     funcArgs.emplace_back(s, cmListFileArgument::Quoted, context.Line);
-    funcArgs.emplace_back(outputVar, cmListFileArgument::Quoted, context.Line);
+    funcArgs.emplace_back(this->OutputVar, cmListFileArgument::Quoted,
+                          context.Line);
     cmListFileFunction func{ this->FunctionName, context.Line, context.Line,
                              std::move(funcArgs) };
 
@@ -701,7 +748,7 @@ public:
     }
 
     // Read back the output variable
-    cmValue result = this->Makefile->GetDefinition(outputVar);
+    cmValue result = this->Makefile->GetDefinition(this->OutputVar);
     if (!result) {
       throw transform_error(
         cmStrCat("sub-command TRANSFORM, action APPLY: function \"",
@@ -713,7 +760,7 @@ public:
     std::string output = *result;
 
     // Clean up
-    this->Makefile->RemoveDefinition(outputVar);
+    this->Makefile->RemoveDefinition(this->OutputVar);
 
     return output;
   }
@@ -721,6 +768,7 @@ public:
 private:
   std::string FunctionName;
   cmMakefile* Makefile = nullptr;
+  std::string OutputVar;
 };
 
 // Descriptor of action
@@ -980,16 +1028,19 @@ cmList& cmList::transform(TransformAction action, std::string const& arg,
                           cmMakefile& makefile,
                           std::unique_ptr<TransformSelector> selector)
 {
-  auto descriptor = TransformConfigure(action, selector, 1);
+  // Validate action and arity via the static registry.
+  TransformConfigure(action, selector, 1);
 
-  auto* applyAction =
-    static_cast<TransformActionApply*>(descriptor->Transform.get());
-  applyAction->Initialize(static_cast<::TransformSelector*>(selector.get()),
-                          arg, makefile);
+  // Create a local instance rather than reusing the singleton from
+  // Descriptors.  A user function invoked by APPLY may itself call
+  // list(TRANSFORM ... APPLY ...), which would clobber a shared instance.
+  TransformActionApply applyAction;
+  applyAction.Initialize(static_cast<::TransformSelector*>(selector.get()),
+                         arg, makefile);
 
   static_cast<::TransformSelector&>(*selector).Transform(
-    this->Values, [&descriptor](std::string const& s) -> std::string {
-      return (*descriptor->Transform)(s);
+    this->Values, [&applyAction](std::string const& s) -> std::string {
+      return applyAction(s);
     });
 
   return *this;
