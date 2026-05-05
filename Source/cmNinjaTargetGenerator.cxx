@@ -1787,8 +1787,9 @@ void cmNinjaTargetGenerator::WriteObjectBuildStatement(
       scanningFiles.ScanningOutput = cmStrCat(objectFileName, ".ddi");
     }
 
-    this->addPoolNinjaVariable("JOB_POOL_COMPILE", this->GetGeneratorTarget(),
-                               source, ppBuild.Variables);
+    this->addPoolNinjaVariable("JOB_POOL_COMPILE", config,
+                               this->GetGeneratorTarget(), source,
+                               ppBuild.Variables);
 
     this->GetGlobalGenerator()->WriteBuild(this->GetImplFileStream(fileConfig),
                                            ppBuild, commandLineLengthLimit);
@@ -1821,13 +1822,13 @@ void cmNinjaTargetGenerator::WriteObjectBuildStatement(
     this->ConvertToOutputFormatForShell(targetSupportDir);
   vars["OBJECT_FILE_DIR"] = this->ConvertToOutputFormatForShell(objectFileDir);
 
-  this->addPoolNinjaVariable("JOB_POOL_COMPILE", this->GetGeneratorTarget(),
-                             source, vars);
+  this->addPoolNinjaVariable("JOB_POOL_COMPILE", config,
+                             this->GetGeneratorTarget(), source, vars);
 
   if (!pchSources.empty() && !source->GetProperty("SKIP_PRECOMPILE_HEADERS")) {
     auto pchIt = pchSources.find(source->GetFullPath());
     if (pchIt != pchSources.end()) {
-      this->addPoolNinjaVariable("JOB_POOL_PRECOMPILE_HEADER",
+      this->addPoolNinjaVariable("JOB_POOL_PRECOMPILE_HEADER", config,
                                  this->GetGeneratorTarget(), nullptr, vars);
     }
   }
@@ -2024,8 +2025,9 @@ void cmNinjaTargetGenerator::WriteCxxModuleBmiBuildStatement(
       scanningFiles.ScanningOutput = cmStrCat(bmiFileName, ".ddi");
     }
 
-    this->addPoolNinjaVariable("JOB_POOL_COMPILE", this->GetGeneratorTarget(),
-                               source, ppBuild.Variables);
+    this->addPoolNinjaVariable("JOB_POOL_COMPILE", config,
+                               this->GetGeneratorTarget(), source,
+                               ppBuild.Variables);
 
     this->GetGlobalGenerator()->WriteBuild(this->GetImplFileStream(fileConfig),
                                            ppBuild, commandLineLengthLimit);
@@ -2053,8 +2055,8 @@ void cmNinjaTargetGenerator::WriteCxxModuleBmiBuildStatement(
     this->ConvertToOutputFormatForShell(targetSupportDir);
   vars["OBJECT_FILE_DIR"] = this->ConvertToOutputFormatForShell(bmiFileDir);
 
-  this->addPoolNinjaVariable("JOB_POOL_COMPILE", this->GetGeneratorTarget(),
-                             source, vars);
+  this->addPoolNinjaVariable("JOB_POOL_COMPILE", config,
+                             this->GetGeneratorTarget(), source, vars);
 
   bmiBuild.RspFile = cmStrCat(bmiFileName, ".rsp");
 
@@ -2775,15 +2777,22 @@ void cmNinjaTargetGenerator::RemoveDepfileBinding(cmNinjaVars& vars) const
 }
 
 void cmNinjaTargetGenerator::addPoolNinjaVariable(
-  std::string const& pool_property, cmGeneratorTarget* target,
-  cmSourceFile const* source, cmNinjaVars& vars)
+  std::string const& pool_property, std::string const& config,
+  cmGeneratorTarget* target, cmSourceFile const* source, cmNinjaVars& vars)
 {
-  // First check the current source properties, then if not found, its target
-  // ones. Allows to override a target-wide compile pool with a source-specific
-  // one.
+  // First check file set properties, then if not found the current source
+  // properties, then if not found, its target ones. Allows to override a
+  // target-wide compile pool with file set-specific or source-specific one.
   cmValue pool = {};
   if (source) {
-    pool = source->GetProperty(pool_property);
+    cmGeneratorFileSet const* fileSet =
+      target->GetFileSetForSource(config, source);
+    if (fileSet) {
+      pool = fileSet->GetProperty(pool_property);
+    }
+    if (!pool) {
+      pool = source->GetProperty(pool_property);
+    }
   }
   if (!pool) {
     pool = target->GetProperty(pool_property);
